@@ -52,6 +52,7 @@ module.exports = {
     try {
       const pdfParse = require("pdf-parse");
       const dataBuffer = fs.readFileSync(filePath);
+      // pdf-parse is a function that returns a Promise
       const data = await pdfParse(dataBuffer);
 
       // data.text  = full extracted text

@@ -27,6 +27,7 @@ pool.on("error", (err) => {
 module.exports = {
   query: (text, params) => pool.query(text, params),
   getClient: () => pool.connect(),
+
   async testConnection() {
     const client = await pool.connect();
     try {
@@ -35,5 +36,27 @@ module.exports = {
     } finally {
       client.release();
     }
+  },
+
+  /**
+   * Delete all chunks for a specific document
+   * @param {string} docId - Document UUID
+   * @returns {Promise<number>} - Number of rows deleted
+   */
+  async deleteChunksByDocId(docId) {
+    const sql = `DELETE FROM document_chunks WHERE doc_id = $1`;
+    const result = await pool.query(sql, [docId]);
+    return result.rowCount || 0;
+  },
+
+  /**
+   * Count chunks for a specific document
+   * @param {string} docId - Document UUID
+   * @returns {Promise<number>} - Number of chunks
+   */
+  async countChunks(docId) {
+    const sql = `SELECT COUNT(*) as count FROM document_chunks WHERE doc_id = $1`;
+    const result = await pool.query(sql, [docId]);
+    return parseInt(result.rows[0].count) || 0;
   },
 };

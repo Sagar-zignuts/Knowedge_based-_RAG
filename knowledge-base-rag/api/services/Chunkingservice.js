@@ -16,8 +16,7 @@
  * Output → array of chunk objects, each with text + metadata
  */
 
-const { RecursiveCharacterTextSplitter } = require("langchain/text_splitter");
-
+const { RecursiveCharacterTextSplitter } = require("@langchain/textsplitters");
 module.exports = {
   // ─────────────────────────────────────────────
   // MAIN METHOD

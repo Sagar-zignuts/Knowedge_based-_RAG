@@ -16,17 +16,25 @@
  * FLOW: ChunkingService → EmbeddingService → VectorStoreService
  */
 
-require("dotenv").config();
-const { OpenAIEmbeddings } = require("@langchain/openai");
+// COMMENTED THIS PART BECAUSE THIS MODEL IS PAID.
+// require("dotenv").config();
+// const { OpenAIEmbeddings } = require("@langchain/openai");
 
-// ── Single shared embeddings instance ──────────────────────────────────────
-// LangChain wrapper around OpenAI's embeddings API.
-// Reads OPENAI_API_KEY from process.env automatically.
-const embeddings = new OpenAIEmbeddings({
-  model: "text-embedding-3-small", // 1536 dimensions, cheap & fast
-  openAIApiKey: process.env.OPENAI_API_KEY,
-  maxRetries: 3, // auto-retry on transient errors
-  maxConcurrency: 5, // max parallel embedding calls
+// // ── Single shared embeddings instance ──────────────────────────────────────
+// // LangChain wrapper around OpenAI's embeddings API.
+// // Reads OPENAI_API_KEY from process.env automatically.
+// const embeddings = new OpenAIEmbeddings({
+//   model: "text-embedding-3-small", // 1536 dimensions, cheap & fast
+//   openAIApiKey: process.env.OPENAI_API_KEY,
+//   maxRetries: 3, // auto-retry on transient errors
+//   maxConcurrency: 5, // max parallel embedding calls
+// });
+
+// USING OLLMA BECAUSE THIS IS FREE AND RUN IN OUR LOCAL MACHINE (BEST FOR LOCAL WORK AND THERE IS NO LIMIT FOR USE)
+const { OllamaEmbeddings } = require("@langchain/ollama");
+const embeddings = new OllamaEmbeddings({
+  model: "nomic-embed-text", // 768 dimensions, free
+  baseUrl: process.env.OLLAMA_BASE_URL || "http://localhost:11434",
 });
 
 // Batch size: how many chunks we send per API call.
@@ -47,7 +55,7 @@ module.exports = {
    *
    * @param {Array<object>} chunks - Array from ChunkingService.splitIntoChunks()
    * @returns {Promise<Array<{ chunk: object, vector: number[] }>>}
-   *   Each item = original chunk object + its 1536-dim embedding vector
+   *   Each item = original chunk object + its 768-dim embedding vector
    */
   async embedChunks(chunks) {
     if (!chunks || chunks.length === 0) {
@@ -128,7 +136,7 @@ module.exports = {
    * Used to embed the user's query before similarity search.
    *
    * @param {string} text - The user's question or search query
-   * @returns {Promise<number[]>} - 1536-dimension vector
+   * @returns {Promise<number[]>} - 768-dimension vector
    */
   async embedText(text) {
     if (!text || text.trim().length === 0) {

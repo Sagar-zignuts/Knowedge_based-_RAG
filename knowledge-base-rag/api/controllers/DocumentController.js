@@ -59,11 +59,11 @@ const fileFilter = (req, file, cb) => {
   }
 };
 
-const upload = multer({
+const uploadMiddleware = multer({
   storage,
   fileFilter,
   limits: { fileSize: 50 * 1024 * 1024 }, // 50MB max
-}).single("file"); // form field name must be 'file'
+}).single("document"); // form field name must be 'document' (avoid Sails conflict)
 
 module.exports = {
   // ─────────────────────────────────────────────
@@ -73,19 +73,40 @@ module.exports = {
 
   upload: function (req, res) {
     // Run multer middleware manually inside Sails action
-    upload(req, res, async (multerErr) => {
+    uploadMiddleware(req, res, async (multerErr) => {
       if (multerErr) {
+        sails.log.error("[DocumentController] Multer error:", multerErr);
         return res.badRequest({ error: multerErr.message });
       }
 
+      // Debug: Check what req.file contains
+      sails.log.info(
+        "[DocumentController] req.file:",
+        JSON.stringify(req.file, null, 2),
+      );
+      sails.log.info("[DocumentController] req.body:", req.body);
+
       if (!req.file) {
         return res.badRequest({
-          error: 'No file uploaded. Use field name "file" in multipart form.',
+          error:
+            'No file uploaded. Use field name "document" in multipart form.',
         });
       }
 
       const { title } = req.body;
-      const file = req.file;
+      const uploadedFile = req.file;
+
+      // Additional validation
+      if (!uploadedFile.path) {
+        sails.log.error(
+          "[DocumentController] uploadedFile has no path property:",
+          uploadedFile,
+        );
+        return res.badRequest({
+          error:
+            "File upload failed - no file path generated. Check server logs.",
+        });
+      }
 
       // Detect document type from mimetype
       const typeMap = {
@@ -97,20 +118,20 @@ module.exports = {
         "image/gif": "image",
         "image/webp": "image",
       };
-      const docType = typeMap[file.mimetype] || "text";
+      const docType = typeMap[uploadedFile.mimetype] || "text";
 
       try {
         // 1. Create MongoDB document record (status: pending)
         const doc = await KnowledgeDocument.create({
-          title: title || file.originalname,
+          title: title || uploadedFile.originalname,
           type: docType,
           status: "pending",
-          filePath: file.path,
+          filePath: uploadedFile.path,
           uploadedBy: req.user.id,
           metadata: {
-            originalName: file.originalname,
-            mimeType: file.mimetype,
-            fileSize: file.size,
+            originalName: uploadedFile.originalname,
+            mimeType: uploadedFile.mimetype,
+            fileSize: uploadedFile.size,
           },
         }).fetch();
 
@@ -121,19 +142,17 @@ module.exports = {
         });
 
         // 3. Run indexing pipeline ASYNCHRONOUSLY (non-blocking)
-        DocumentController._runIndexingPipeline(
-          doc.id,
-          docType,
-          file.path,
-        ).catch((err) => {
-          sails.log.error(
-            `[DocumentController] Async indexing failed for doc ${doc.id}: ${err.message}`,
-          );
-        });
+        module.exports
+          ._runIndexingPipeline(doc.id, docType, uploadedFile.path)
+          .catch((err) => {
+            sails.log.error(
+              `[DocumentController] Async indexing failed for doc ${doc.id}: ${err.message}`,
+            );
+          });
       } catch (err) {
         sails.log.error("[DocumentController] upload error:", err);
         // Clean up uploaded file if DB create failed
-        if (fs.existsSync(file.path)) fs.unlinkSync(file.path);
+        if (fs.existsSync(uploadedFile.path)) fs.unlinkSync(uploadedFile.path);
         return res.serverError({ error: err.message });
       }
     });
@@ -178,13 +197,11 @@ module.exports = {
       });
 
       // 3. Run indexing asynchronously using URL as the "filePath"
-      DocumentController._runIndexingPipeline(doc.id, "url", url).catch(
-        (err) => {
-          sails.log.error(
-            `[DocumentController] Async URL indexing failed for doc ${doc.id}: ${err.message}`,
-          );
-        },
-      );
+      module.exports._runIndexingPipeline(doc.id, "url", url).catch((err) => {
+        sails.log.error(
+          `[DocumentController] Async URL indexing failed for doc ${doc.id}: ${err.message}`,
+        );
+      });
     } catch (err) {
       sails.log.error("[DocumentController] addUrl error:", err);
       return res.serverError({ error: err.message });
@@ -286,7 +303,7 @@ module.exports = {
       }
 
       // 1. Delete all vector chunks from pgvector (using UUID bridge)
-      const deletedChunks = await VectorStoreService.deleteDocument(doc.id);
+      const deletedChunks = await Vectorstoreservice.deleteDocument(doc.id);
 
       // 2. Delete the physical file from disk (if it exists)
       if (doc.filePath && fs.existsSync(doc.filePath)) {
@@ -344,7 +361,7 @@ module.exports = {
 
       // ── Step 3: Extract text ─────────────────────────────────────────────
       sails.log.info(`[DocumentController] Step 3: Extracting text...`);
-      const { text, pageCount, metadata } = await DocumentProcessor.extractText(
+      const { text, pageCount, metadata } = await Documentprocessor.extractText(
         docType,
         filePath,
       );
@@ -353,7 +370,7 @@ module.exports = {
       sails.log.info(
         `[DocumentController] Step 4: Chunking text (${text.length} chars)...`,
       );
-      const chunks = await ChunkingService.splitIntoChunks(text, {
+      const chunks = await Chunkingservice.splitIntoChunks(text, {
         docId: doc.id,
         docTitle: doc.title,
         docType: doc.type,
@@ -366,11 +383,11 @@ module.exports = {
 
       // ── Step 5: Generate embeddings ──────────────────────────────────────
       sails.log.info(`[DocumentController] Step 5: Generating embeddings...`);
-      const embeddedChunks = await EmbeddingService.embedChunks(chunks);
+      const embeddedChunks = await Embeddingservice.embedChunks(chunks);
 
       // ── Step 6: Store in pgvector ────────────────────────────────────────
       sails.log.info(`[DocumentController] Step 6: Storing in pgvector...`);
-      const storedCount = await VectorStoreService.indexDocument(
+      const storedCount = await Vectorstoreservice.indexDocument(
         doc.id,
         embeddedChunks,
         // Progress callback — update MongoDB chunkCount every 10 inserts
