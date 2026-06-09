@@ -59,4 +59,47 @@ module.exports = {
     const result = await pool.query(sql, [docId]);
     return parseInt(result.rows[0].count) || 0;
   },
+
+  /**
+   * Perform vector similarity search using pgvector
+   * @param {number[]} queryVector - The embedding vector to search for (768 dimensions)
+   * @param {number} topK - Number of top results to return (default: 5)
+   * @returns {Promise<Array>} - Array of similar chunks with metadata and similarity scores
+   */
+  async similaritySearch(queryVector, topK = 5) {
+    if (!queryVector || !Array.isArray(queryVector)) {
+      throw new Error("queryVector must be an array of numbers");
+    }
+
+    // Convert JavaScript array to PostgreSQL vector format
+    const vectorString = `[${queryVector.join(",")}]`;
+
+    // pgvector cosine distance operator: <=>
+    // Lower distance = higher similarity
+    // ORDER BY distance ASC gives us the most similar chunks first
+    const sql = `
+      SELECT 
+        id,
+        doc_id,
+        doc_title,
+        doc_type,
+        chunk_index,
+        page_number,
+        content,
+        metadata,
+        (embedding <=> $1::vector) as similarity
+      FROM document_chunks
+      WHERE embedding IS NOT NULL
+      ORDER BY embedding <=> $1::vector
+      LIMIT $2
+    `;
+
+    try {
+      const result = await pool.query(sql, [vectorString, topK]);
+      return result.rows;
+    } catch (err) {
+      sails.log.error(`[PgService] similaritySearch error: ${err.message}`);
+      throw err;
+    }
+  },
 };

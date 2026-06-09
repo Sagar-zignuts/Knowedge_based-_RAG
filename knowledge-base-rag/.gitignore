@@ -135,3 +135,4 @@ lib-cov
 .env
 uploads/
 node_modules/
+.tmp/

@@ -1,30 +1,75 @@
 /**
- * Seed Function
- * (sails.config.bootstrap)
+ * config/bootstrap.js
  *
- * A function that runs just before your Sails app gets lifted.
- * > Need more flexibility?  You can also create a hook.
+ * PURPOSE: Runs automatically every time "sails lift" starts the server.
+ * Tests both database connections before accepting any requests.
+ * If either DB is unreachable — server fails fast with a clear error
+ * instead of silently serving broken requests.
  *
- * For more information on seeding your app with fake data, check out:
- * https://sailsjs.com/config/bootstrap
+ * Also confirms Ollama is reachable so we know AI features will work.
  */
 
-module.exports.bootstrap = async function() {
+require("dotenv").config();
+const axios = require("axios");
 
-  // By convention, this is a good place to set up fake data during development.
-  //
-  // For example:
-  // ```
-  // // Set up fake development data (or if we already have some, avast)
-  // if (await User.count() > 0) {
-  //   return;
-  // }
-  //
-  // await User.createEach([
-  //   { emailAddress: 'ry@example.com', fullName: 'Ryan Dahl', },
-  //   { emailAddress: 'rachael@example.com', fullName: 'Rachael Shaw', },
-  //   // etc.
-  // ]);
-  // ```
+module.exports.bootstrap = async function () {
+  sails.log.info("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
+  sails.log.info("  KnowledgeBase AI — Starting up");
+  sails.log.info("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
 
+  // ── 1. Test MongoDB connection ──────────────────────────────────────
+  try {
+    await User.count(); // Simple query to verify MongoDB is responding
+    sails.log.info("  ✅ MongoDB connected successfully");
+  } catch (err) {
+    sails.log.error("  ❌ MongoDB connection failed:", err.message);
+    sails.log.error(
+      "  → Check MONGODB_URL in .env and ensure MongoDB is running",
+    );
+    throw err; // Stop server from starting
+  }
+
+  // ── 2. Test PostgreSQL + pgvector connection ────────────────────────
+  try {
+    await PgService.testConnection();
+    sails.log.info("  ✅ PostgreSQL (pgvector) connected successfully");
+  } catch (err) {
+    sails.log.error("  ❌ PostgreSQL connection failed:", err.message);
+    sails.log.error(
+      "  → Check POSTGRES_* vars in .env and ensure PostgreSQL is running",
+    );
+    throw err;
+  }
+
+  // ── 3. Verify pgvector extension is enabled ─────────────────────────
+  try {
+    const result = await PgService.query(
+      "SELECT extname FROM pg_extension WHERE extname = 'vector'",
+    );
+    if (result.rows.length === 0) {
+      throw new Error(
+        "pgvector extension not enabled. Run: CREATE EXTENSION vector;",
+      );
+    }
+    sails.log.info("  ✅ pgvector extension active");
+  } catch (err) {
+    sails.log.error("  ❌ pgvector check failed:", err.message);
+    throw err;
+  }
+
+  // ── 4. Check Ollama is running (non-fatal warning) ──────────────────
+  try {
+    const ollamaUrl = process.env.OLLAMA_BASE_URL || "http://localhost:11434";
+    await axios.get(`${ollamaUrl}/api/tags`, { timeout: 3000 });
+    sails.log.info("  ✅ Ollama is running and reachable");
+  } catch (err) {
+    // Warning only — don't stop server if Ollama is not running
+    // It might be started later, and other endpoints still work
+    sails.log.warn("  ⚠️  Ollama not reachable. AI features will not work.");
+    sails.log.warn('  → Run "ollama serve" in a separate terminal');
+  }
+
+  sails.log.info("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
+  sails.log.info("  All checks passed. Server is ready.");
+  sails.log.info("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
 };

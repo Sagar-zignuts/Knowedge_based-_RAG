@@ -1,48 +1,40 @@
 /**
- * EmbeddingService.js
+ * EmbeddingService.js  (Updated for Ollama)
  *
- * PURPOSE: Convert text into embedding vectors using OpenAI's API.
- * These vectors are 1536-dimension float arrays that mathematically
+ * PURPOSE: Convert text into embedding vectors using Ollama's nomic-embed-text.
+ * These vectors are 768-dimension float arrays that mathematically
  * represent the MEANING of the text.
  *
  * TWO USE CASES:
- * 1. embedChunks()  → called during INDEXING (Phase 2) to embed all chunks
- * 2. embedText()    → called during CHAT (Phase 3) to embed the user's query
+ * 1. embedChunks() → called during INDEXING (Phase 2) to embed all chunks
+ * 2. embedText()   → called during CHAT (Phase 3) to embed the user's query
  *
- * CRITICAL RULE: Both must use the EXACT same model.
- * If indexing uses text-embedding-3-small and query uses text-embedding-3-large,
- * the vector spaces are incompatible and similarity search returns garbage.
+ * CRITICAL RULE: Both MUST use the EXACT same model.
+ * RagService.js also uses nomic-embed-text for query embedding.
+ * If they ever differ, similarity search returns garbage results.
+ *
+ * CHANGED FROM OPENAI:
+ *   Before: OpenAIEmbeddings({ model: 'text-embedding-3-small' }) → 1536 dims
+ *   After:  OllamaEmbeddings({ model: 'nomic-embed-text' })       → 768 dims
  *
  * FLOW: ChunkingService → EmbeddingService → VectorStoreService
  */
 
-// COMMENTED THIS PART BECAUSE THIS MODEL IS PAID.
-// require("dotenv").config();
-// const { OpenAIEmbeddings } = require("@langchain/openai");
-
-// // ── Single shared embeddings instance ──────────────────────────────────────
-// // LangChain wrapper around OpenAI's embeddings API.
-// // Reads OPENAI_API_KEY from process.env automatically.
-// const embeddings = new OpenAIEmbeddings({
-//   model: "text-embedding-3-small", // 1536 dimensions, cheap & fast
-//   openAIApiKey: process.env.OPENAI_API_KEY,
-//   maxRetries: 3, // auto-retry on transient errors
-//   maxConcurrency: 5, // max parallel embedding calls
-// });
-
-// USING OLLMA BECAUSE THIS IS FREE AND RUN IN OUR LOCAL MACHINE (BEST FOR LOCAL WORK AND THERE IS NO LIMIT FOR USE)
+require("dotenv").config();
 const { OllamaEmbeddings } = require("@langchain/ollama");
+
+// ── Single shared embeddings instance ──────────────────────────────────────
 const embeddings = new OllamaEmbeddings({
-  model: "nomic-embed-text", // 768 dimensions, free
+  model: "nomic-embed-text", // 768 dimensions
   baseUrl: process.env.OLLAMA_BASE_URL || "http://localhost:11434",
 });
 
-// Batch size: how many chunks we send per API call.
-// OpenAI allows up to 2048 inputs per request but 20 is safe for all sizes.
-const BATCH_SIZE = 20;
+// Batch size: how many chunks per embedding call
+// Ollama runs locally so we can use smaller batches safely
+const BATCH_SIZE = 10;
 
-// Delay between batches in ms — avoids hitting rate limits
-const BATCH_DELAY_MS = 300;
+// Small delay between batches (ms) — gives Ollama time to breathe
+const BATCH_DELAY_MS = 200;
 
 module.exports = {
   // ─────────────────────────────────────────────
@@ -51,11 +43,10 @@ module.exports = {
 
   /**
    * Generate embeddings for an array of chunks.
-   * Processes in batches to respect OpenAI rate limits.
+   * Processes in batches to avoid overloading local Ollama.
    *
    * @param {Array<object>} chunks - Array from ChunkingService.splitIntoChunks()
    * @returns {Promise<Array<{ chunk: object, vector: number[] }>>}
-   *   Each item = original chunk object + its 768-dim embedding vector
    */
   async embedChunks(chunks) {
     if (!chunks || chunks.length === 0) {
@@ -75,11 +66,11 @@ module.exports = {
       const batchTexts = batch.map((c) => c.content);
 
       sails.log.info(
-        `[EmbeddingService] Processing batch ${batchNum}/${totalBatches} (${batch.length} chunks)`,
+        `[EmbeddingService] Batch ${batchNum}/${totalBatches} (${batch.length} chunks)`,
       );
 
       try {
-        // LangChain embedDocuments sends all texts in one API call
+        // OllamaEmbeddings.embedDocuments() sends all texts in one call
         const vectors = await embeddings.embedDocuments(batchTexts);
 
         // Pair each chunk with its vector
@@ -90,34 +81,39 @@ module.exports = {
           });
         });
 
-        // Delay between batches to avoid rate limits (skip after last batch)
+        // Small delay between batches — not strictly needed for Ollama
+        // but good practice to avoid memory spikes
         if (i + BATCH_SIZE < chunks.length) {
           await this._sleep(BATCH_DELAY_MS);
         }
       } catch (err) {
-        // Handle OpenAI rate limit specifically
-        if (
-          err.status === 429 ||
-          (err.message && err.message.includes("429"))
-        ) {
-          sails.log.warn(
-            `[EmbeddingService] Rate limit hit on batch ${batchNum}. Waiting 10s before retry...`,
-          );
-          await this._sleep(10000);
+        sails.log.error(
+          `[EmbeddingService] Batch ${batchNum} failed: ${err.message}`,
+        );
 
-          // Retry this batch once
-          const vectors = await embeddings.embedDocuments(batchTexts);
-          batch.forEach((chunk, idx) => {
-            results.push({ chunk, vector: vectors[idx] });
-          });
-        } else {
-          sails.log.error(
-            `[EmbeddingService] Batch ${batchNum} failed: ${err.message}`,
-          );
+        // Check if Ollama is running
+        if (
+          err.message.includes("ECONNREFUSED") ||
+          err.message.includes("fetch failed")
+        ) {
           throw new Error(
-            `Embedding failed at batch ${batchNum}: ${err.message}`,
+            'Cannot connect to Ollama. Make sure Ollama is running: run "ollama serve" in terminal',
           );
         }
+
+        // Check if model is pulled
+        if (
+          err.message.includes("model") &&
+          err.message.includes("not found")
+        ) {
+          throw new Error(
+            "Ollama model not found. Run: ollama pull nomic-embed-text",
+          );
+        }
+
+        throw new Error(
+          `Embedding failed at batch ${batchNum}: ${err.message}`,
+        );
       }
     }
 
@@ -133,7 +129,7 @@ module.exports = {
 
   /**
    * Generate embedding for a single text string.
-   * Used to embed the user's query before similarity search.
+   * Used to embed user's query before similarity search.
    *
    * @param {string} text - The user's question or search query
    * @returns {Promise<number[]>} - 768-dimension vector
@@ -144,16 +140,21 @@ module.exports = {
     }
 
     try {
-      // LangChain embedQuery is optimized for single query embedding
       const vector = await embeddings.embedQuery(text.trim());
-
       sails.log.info(
-        `[EmbeddingService] Single text embedded. Vector dim: ${vector.length}`,
+        `[EmbeddingService] Query embedded. Dimensions: ${vector.length}`,
       );
       return vector;
     } catch (err) {
-      sails.log.error(`[EmbeddingService] embedText failed: ${err.message}`);
-      throw new Error(`Failed to embed query text: ${err.message}`);
+      if (
+        err.message.includes("ECONNREFUSED") ||
+        err.message.includes("fetch failed")
+      ) {
+        throw new Error(
+          "Cannot connect to Ollama. Make sure it is running: ollama serve",
+        );
+      }
+      throw new Error(`Failed to embed query: ${err.message}`);
     }
   },
 
@@ -161,10 +162,6 @@ module.exports = {
   // PRIVATE HELPERS
   // ─────────────────────────────────────────────
 
-  /**
-   * Sleep for a given number of milliseconds.
-   * Used for rate limit delays between batches.
-   */
   _sleep(ms) {
     return new Promise((resolve) => setTimeout(resolve, ms));
   },
