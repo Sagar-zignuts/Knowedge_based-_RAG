@@ -1,3 +1,9 @@
+// Polyfill ReadableStream for Node.js compatibility with LangChain
+if (typeof global.ReadableStream === "undefined") {
+  const { ReadableStream } = require("stream/web");
+  global.ReadableStream = ReadableStream;
+}
+
 /**
  * ChunkingService.js
  *

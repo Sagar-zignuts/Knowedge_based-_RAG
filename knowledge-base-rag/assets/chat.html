@@ -18,7 +18,69 @@
         overflow: hidden;
       }
 
-      /* Sidebar */
+      /* ── Toast notifications ── */
+      .toast-container {
+        position: fixed;
+        top: 16px;
+        right: 16px;
+        z-index: 9999;
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+      }
+      .toast {
+        padding: 10px 16px;
+        border-radius: 8px;
+        font-size: 13px;
+        font-weight: 500;
+        min-width: 220px;
+        max-width: 340px;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+        animation: slideIn 0.25s ease;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+      }
+      .toast.success {
+        background: #f0fdf4;
+        border: 1px solid #bbf7d0;
+        color: #15803d;
+      }
+      .toast.error {
+        background: #fef2f2;
+        border: 1px solid #fecaca;
+        color: #b91c1c;
+      }
+      .toast.info {
+        background: #eff6ff;
+        border: 1px solid #bfdbfe;
+        color: #1d4ed8;
+      }
+      .toast.warning {
+        background: #fffbeb;
+        border: 1px solid #fde68a;
+        color: #92400e;
+      }
+      @keyframes slideIn {
+        from {
+          opacity: 0;
+          transform: translateX(20px);
+        }
+        to {
+          opacity: 1;
+          transform: translateX(0);
+        }
+      }
+      @keyframes slideOut {
+        from {
+          opacity: 1;
+        }
+        to {
+          opacity: 0;
+        }
+      }
+
+      /* ── Sidebar ── */
       .sidebar {
         width: 260px;
         background: #1e1e2e;
@@ -45,6 +107,7 @@
         width: 100%;
         text-align: left;
         margin-bottom: 12px;
+        transition: background 0.15s;
       }
       .new-chat-btn:hover {
         background: #45475a;
@@ -87,23 +150,58 @@
         color: #cdd6f4;
         font-size: 12px;
         margin-bottom: 6px;
+        outline: none;
+      }
+      .login-area input:focus {
+        border-color: #cba6f7;
       }
       .login-area input::placeholder {
         color: #585b70;
       }
-      .login-area button {
+      .login-btn {
         width: 100%;
-        padding: 8px;
+        padding: 9px;
         border-radius: 6px;
         background: #cba6f7;
         color: #1e1e2e;
         border: none;
         cursor: pointer;
-        font-size: 12px;
+        font-size: 13px;
         font-weight: 600;
+        transition: opacity 0.15s;
+      }
+      .login-btn:hover {
+        opacity: 0.9;
+      }
+      .login-btn:disabled {
+        opacity: 0.6;
+        cursor: not-allowed;
+      }
+      .user-info {
+        display: none;
+        padding: 8px 10px;
+        background: #313244;
+        border-radius: 8px;
+        font-size: 12px;
+        color: #cdd6f4;
+        margin-top: 8px;
+      }
+      .logout-btn {
+        margin-top: 6px;
+        width: 100%;
+        padding: 7px;
+        border-radius: 6px;
+        background: transparent;
+        border: 1px solid #45475a;
+        color: #bac2de;
+        cursor: pointer;
+        font-size: 12px;
+      }
+      .logout-btn:hover {
+        background: #313244;
       }
 
-      /* Main chat area */
+      /* ── Main chat ── */
       .main {
         flex: 1;
         display: flex;
@@ -125,9 +223,10 @@
         width: 8px;
         height: 8px;
         border-radius: 50%;
-        background: #22c55e;
+        background: #94a3b8;
         display: inline-block;
         margin-right: 6px;
+        transition: background 0.3s;
       }
       .messages {
         flex: 1;
@@ -172,6 +271,8 @@
         font-size: 14px;
         line-height: 1.65;
         max-width: 640px;
+        white-space: pre-wrap;
+        word-break: break-word;
       }
       .bubble.ai {
         background: #fff;
@@ -199,8 +300,8 @@
         border-top: 1px solid #f0f0f0;
       }
       .sources-label {
-        font-size: 11px;
-        font-weight: 600;
+        font-size: 10px;
+        font-weight: 700;
         color: #888;
         text-transform: uppercase;
         letter-spacing: 0.05em;
@@ -220,24 +321,27 @@
         text-align: center;
         margin: auto;
         color: #888;
+        padding: 40px;
       }
       .empty-state h3 {
-        font-size: 18px;
+        font-size: 20px;
         font-weight: 600;
         color: #333;
         margin-bottom: 8px;
       }
       .empty-state p {
         font-size: 14px;
+        margin-bottom: 4px;
       }
 
-      /* Input area */
+      /* ── Input area ── */
       .input-area {
         background: #fff;
         padding: 16px 20px;
         border-top: 1px solid #e5e7eb;
         display: flex;
         gap: 10px;
+        align-items: flex-end;
       }
       .input-area textarea {
         flex: 1;
@@ -250,12 +354,13 @@
         height: 44px;
         max-height: 120px;
         font-family: inherit;
+        transition: border-color 0.15s;
       }
       .input-area textarea:focus {
         border-color: #7c3aed;
       }
       .send-btn {
-        padding: 10px 20px;
+        padding: 11px 22px;
         background: #7c3aed;
         color: #fff;
         border: none;
@@ -264,25 +369,41 @@
         font-size: 14px;
         font-weight: 500;
         min-width: 80px;
+        transition: background 0.15s;
+      }
+      .send-btn:hover:not(:disabled) {
+        background: #6d28d9;
       }
       .send-btn:disabled {
         background: #c4b5fd;
         cursor: not-allowed;
       }
-      .error-msg {
-        color: #ef4444;
-        font-size: 12px;
-        padding: 4px 0;
+
+      /* ── Debug bar (hidden by default) ── */
+      .debug-bar {
+        background: #1e1e2e;
+        color: #a6e3a1;
+        font-family: monospace;
+        font-size: 11px;
+        padding: 6px 14px;
+        border-top: 1px solid #313244;
+        display: none;
       }
     </style>
   </head>
   <body>
+    <!-- Toast container -->
+    <div class="toast-container" id="toastContainer"></div>
+
     <!-- SIDEBAR -->
     <div class="sidebar">
       <h2>🧠 KnowledgeBase AI</h2>
       <button class="new-chat-btn" onclick="newChat()">+ New Chat</button>
-      <div class="session-list" id="sessionList"></div>
-
+      <div class="session-list" id="sessionList">
+        <div style="font-size: 11px; color: #585b70; padding: 8px 4px">
+          Login to see sessions
+        </div>
+      </div>
       <div class="login-area" id="loginArea">
         <input
           type="email"
@@ -294,11 +415,18 @@
           type="password"
           id="passwordInput"
           placeholder="Password"
-          style="margin-top: 6px"
           value="Test1234"
+          style="margin-top: 6px"
         />
-        <button onclick="login()">Login</button>
-        <div class="error-msg" id="loginError"></div>
+        <button class="login-btn" id="loginBtn" onclick="login()">Login</button>
+        <div
+          id="loginError"
+          style="color: #f38ba8; font-size: 11px; margin-top: 6px"
+        ></div>
+      </div>
+      <div class="user-info" id="userInfo">
+        <span id="userEmail"></span>
+        <button class="logout-btn" onclick="logout()">Logout</button>
       </div>
     </div>
 
@@ -306,18 +434,19 @@
     <div class="main">
       <div class="chat-header">
         <span id="sessionTitle">KnowledgeBase AI</span>
-        <span
-          ><span class="status-dot" id="statusDot"></span
-          ><span id="statusText" style="font-size: 12px; color: #888"
+        <span>
+          <span class="status-dot" id="statusDot"></span>
+          <span id="statusText" style="font-size: 12px; color: #888"
             >Not logged in</span
-          ></span
-        >
+          >
+        </span>
       </div>
       <div class="messages" id="messages">
         <div class="empty-state" id="emptyState">
-          <h3>Welcome to KnowledgeBase AI</h3>
-          <p>
-            Login and start a new chat to ask questions about your documents.
+          <h3>🧠 KnowledgeBase AI</h3>
+          <p>Login and click <strong>+ New Chat</strong> to start.</p>
+          <p style="margin-top: 8px; font-size: 12px; color: #aaa">
+            Ask questions about your uploaded documents.
           </p>
         </div>
       </div>
@@ -332,28 +461,119 @@
           Send
         </button>
       </div>
+      <div class="debug-bar" id="debugBar"></div>
     </div>
 
     <script>
-      // ── State ─────────────────────────────────────────────────────────
-      let token = localStorage.getItem("kb_token") || null;
-      let sessionId = localStorage.getItem("kb_session") || null;
+      // ═══════════════════════════════════════════════════════════
+      // STATE
+      // ═══════════════════════════════════════════════════════════
+      let token = null;
+      let sessionId = null;
       let isStreaming = false;
 
-      // ── Init ──────────────────────────────────────────────────────────
+      // ═══════════════════════════════════════════════════════════
+      // TOAST SYSTEM
+      // ═══════════════════════════════════════════════════════════
+      function showToast(message, type = "info", duration = 3500) {
+        const icons = { success: "✅", error: "❌", info: "ℹ️", warning: "⚠️" };
+        const container = document.getElementById("toastContainer");
+        const toast = document.createElement("div");
+        toast.className = `toast ${type}`;
+        toast.innerHTML = `<span>${icons[type]}</span><span>${message}</span>`;
+        container.appendChild(toast);
+        setTimeout(() => {
+          toast.style.animation = "slideOut .25s ease forwards";
+          setTimeout(() => toast.remove(), 250);
+        }, duration);
+      }
+
+      // ═══════════════════════════════════════════════════════════
+      // DEBUG HELPER
+      // ═══════════════════════════════════════════════════════════
+      function debug(msg) {
+        console.log("[KBChat]", msg);
+      }
+
+      // ═══════════════════════════════════════════════════════════
+      // INIT — on page load
+      // ═══════════════════════════════════════════════════════════
       window.onload = async () => {
-        if (token) {
-          setLoggedIn();
-          await loadSessions();
-          if (sessionId) await loadHistory();
+        // Read token from localStorage
+        const savedToken = localStorage.getItem("kb_token");
+        const savedSessionId = localStorage.getItem("kb_session");
+
+        debug(
+          `Saved token: ${savedToken ? savedToken.substring(0, 20) + "..." : "none"}`,
+        );
+        debug(`Saved sessionId: ${savedSessionId || "none"}`);
+
+        if (savedToken) {
+          // Verify the saved token is still valid
+          const valid = await verifyToken(savedToken);
+          if (valid) {
+            token = savedToken;
+            sessionId = savedSessionId;
+            setLoggedIn(valid);
+            await loadSessions();
+            if (sessionId) await loadHistory();
+          } else {
+            // Token expired — clear and show login
+            localStorage.removeItem("kb_token");
+            localStorage.removeItem("kb_session");
+            showToast("Session expired. Please login again.", "warning");
+          }
         }
       };
 
-      // ── Auth ──────────────────────────────────────────────────────────
+      // ═══════════════════════════════════════════════════════════
+      // GLOBAL ERROR HANDLER — catch all unhandled errors
+      // ═══════════════════════════════════════════════════════════
+      window.onerror = function (message, source, lineno, colno, error) {
+        debug(`Unhandled error: ${message}`);
+        showToast(`Unexpected error: ${message}`, "error");
+        return false; // Let default error handling continue
+      };
+
+      // Handle unhandled promise rejections
+      window.onunhandledrejection = function (event) {
+        debug(`Unhandled promise rejection: ${event.reason}`);
+        showToast(`Unexpected error: ${event.reason}`, "error");
+      };
+
+      // ═══════════════════════════════════════════════════════════
+      // AUTH
+      // ═══════════════════════════════════════════════════════════
+      async function verifyToken(t) {
+        try {
+          const res = await fetch("/api/auth/me", {
+            headers: { Authorization: `Bearer ${t}` },
+          });
+          if (res.ok) {
+            const data = await res.json();
+            return data.user;
+          }
+          return null;
+        } catch {
+          return null;
+        }
+      }
+
       async function login() {
-        const email = document.getElementById("emailInput").value;
+        const email = document.getElementById("emailInput").value.trim();
         const password = document.getElementById("passwordInput").value;
-        document.getElementById("loginError").textContent = "";
+        const loginBtn = document.getElementById("loginBtn");
+        const errDiv = document.getElementById("loginError");
+
+        errDiv.textContent = "";
+
+        if (!email || !password) {
+          errDiv.textContent = "Email and password are required";
+          return;
+        }
+
+        loginBtn.disabled = true;
+        loginBtn.textContent = "Logging in...";
 
         try {
           const res = await fetch("/api/auth/login", {
@@ -361,73 +581,172 @@
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({ email, password }),
           });
-          const data = await res.json();
-          if (!res.ok) throw new Error(data.error || "Login failed");
 
+          const data = await res.json();
+          debug(`Login response status: ${res.status}`);
+
+          if (!res.ok) {
+            throw new Error(data.error || `Login failed (${res.status})`);
+          }
+
+          // Save token
           token = data.token;
           localStorage.setItem("kb_token", token);
-          setLoggedIn();
+          debug(`Token saved: ${token.substring(0, 20)}...`);
+
+          setLoggedIn(data.user);
+          showToast(`Welcome back, ${data.user.name}!`, "success");
+
+          // Load sessions
           await loadSessions();
 
-          // Auto-create a new session if user doesn't have one
+          // Auto-create a session if none exists
           if (!sessionId) {
             await newChat();
           }
         } catch (err) {
-          document.getElementById("loginError").textContent = err.message;
+          debug(`Login error: ${err.message}`);
+          errDiv.textContent = err.message;
+          showToast(err.message, "error");
+        } finally {
+          loginBtn.disabled = false;
+          loginBtn.textContent = "Login";
         }
       }
 
-      function setLoggedIn() {
+      function setLoggedIn(user) {
         document.getElementById("statusDot").style.background = "#22c55e";
         document.getElementById("statusText").textContent = "Connected";
         document.getElementById("questionInput").disabled = false;
         document.getElementById("sendBtn").disabled = false;
         document.getElementById("loginArea").style.display = "none";
+        document.getElementById("userInfo").style.display = "block";
+        document.getElementById("userEmail").textContent = user
+          ? `${user.name} (${user.role})`
+          : "Logged in";
       }
 
-      // ── Sessions ──────────────────────────────────────────────────────
+      function logout(silent = false) {
+        token = null;
+        sessionId = null;
+        localStorage.removeItem("kb_token");
+        localStorage.removeItem("kb_session");
+        document.getElementById("loginArea").style.display = "block";
+        document.getElementById("userInfo").style.display = "none";
+        document.getElementById("statusDot").style.background = "#94a3b8";
+        document.getElementById("statusText").textContent = "Not logged in";
+        document.getElementById("questionInput").disabled = true;
+        document.getElementById("sendBtn").disabled = true;
+        document.getElementById("sessionList").innerHTML =
+          '<div style="font-size:11px;color:#585b70;padding:8px 4px">Login to see sessions</div>';
+        document.getElementById("messages").innerHTML = "";
+        document.getElementById("sessionTitle").textContent =
+          "KnowledgeBase AI";
+        if (!silent) {
+          showToast("Logged out successfully", "info");
+        }
+      }
+
+      // ═══════════════════════════════════════════════════════════
+      // SESSIONS
+      // ═══════════════════════════════════════════════════════════
       async function loadSessions() {
+        if (!token) {
+          debug("loadSessions: no token, skipping");
+          return;
+        }
         try {
+          debug("Loading sessions...");
           const res = await apiFetch("/api/chat/sessions");
+
+          if (res.status === 401) {
+            debug("loadSessions: 401 — token invalid, logging out");
+            // Clear invalid token and logout silently
+            logout(true);
+            return;
+          }
+
+          if (!res.ok) {
+            const err = await res.json().catch(() => ({}));
+            const errorMsg =
+              err.error || `Failed to load sessions (${res.status})`;
+            showToast(errorMsg, "error");
+            return;
+          }
+
           const data = await res.json();
+          debug(`Loaded ${data.sessions?.length || 0} sessions`);
           renderSessions(data.sessions || []);
         } catch (err) {
-          console.error("Load sessions failed", err);
+          debug(`loadSessions error: ${err.message}`);
+          showToast(`Could not load sessions: ${err.message}`, "error");
         }
       }
 
       function renderSessions(sessions) {
         const list = document.getElementById("sessionList");
+        if (sessions.length === 0) {
+          list.innerHTML =
+            '<div style="font-size:11px;color:#585b70;padding:8px 4px">No sessions yet — click + New Chat</div>';
+          return;
+        }
         list.innerHTML = sessions
           .map(
             (s) => `
-      <div class="session-item ${s.sessionId === sessionId ? "active" : ""}"
-           onclick="switchSession('${s.sessionId}', '${escHtml(s.title)}')">
-        ${escHtml(s.title || "New conversation")}
-      </div>
-    `,
+    <div class="session-item ${s.sessionId === sessionId ? "active" : ""}"
+         onclick="switchSession('${s.sessionId}', '${escHtml(s.title)}')">
+      ${escHtml(s.title || "New conversation")}
+    </div>
+  `,
           )
           .join("");
       }
 
       async function newChat() {
+        if (!token) {
+          showToast("Please login first", "warning");
+          return;
+        }
         try {
+          debug("Creating new chat session...");
           const res = await apiFetch("/api/chat/session", {
             method: "POST",
-            body: JSON.stringify({}),
+            body: JSON.stringify({ title: "New conversation" }),
           });
+
+          if (res.status === 401) {
+            debug("newChat: 401 — token invalid, logging out");
+            logout(true);
+            showToast("Session expired. Please login again.", "warning");
+            return;
+          }
+
+          if (!res.ok) {
+            const err = await res.json().catch(() => ({}));
+            throw new Error(
+              err.error || `Failed to create session (${res.status})`,
+            );
+          }
+
           const data = await res.json();
           sessionId = data.session.sessionId;
           localStorage.setItem("kb_session", sessionId);
-          document.getElementById("messages").innerHTML = "";
-          document.getElementById("emptyState") &&
-            document.getElementById("emptyState").remove();
+          debug(`New session created: ${sessionId}`);
+
+          // Clear messages
+          document.getElementById("messages").innerHTML = `
+      <div class="empty-state">
+        <h3>New conversation started</h3>
+        <p>Ask anything about your uploaded documents.</p>
+      </div>`;
           document.getElementById("sessionTitle").textContent =
             "New conversation";
+
+          showToast("New chat started", "success", 2000);
           await loadSessions();
         } catch (err) {
-          console.error("New chat failed", err);
+          debug(`newChat error: ${err.message}`);
+          showToast(`Could not create session: ${err.message}`, "error");
         }
       }
 
@@ -441,23 +760,49 @@
       }
 
       async function loadHistory() {
-        if (!sessionId) return;
+        if (!sessionId || !token) return;
         try {
           const res = await apiFetch(`/api/chat/${sessionId}`);
+
+          if (res.status === 401) {
+            debug("loadHistory: 401 — token invalid, logging out");
+            logout(true);
+            showToast("Session expired. Please login again.", "warning");
+            return;
+          }
+
+          if (!res.ok) {
+            const err = await res.json().catch(() => ({}));
+            const errorMsg =
+              err.error || `Failed to load history (${res.status})`;
+            showToast(errorMsg, "error");
+            return;
+          }
+
           const data = await res.json();
           document.getElementById("messages").innerHTML = "";
           (data.messages || []).forEach((m) => {
             if (m.role === "user") addUserBubble(m.content);
             else addAIBubble(m.content, m.sources || []);
           });
+          if (data.messages?.length === 0) {
+            document.getElementById("messages").innerHTML = `
+        <div class="empty-state">
+          <h3>Empty conversation</h3>
+          <p>Ask your first question below.</p>
+        </div>`;
+          }
           document.getElementById("sessionTitle").textContent =
-            data.session.title || "Chat";
+            data.session?.title || "Chat";
         } catch (err) {
-          console.error("Load history failed", err);
+          debug(`loadHistory error: ${err.message}`);
+          showToast(`Could not load chat history: ${err.message}`, "error");
         }
       }
 
-      // ── Chat ──────────────────────────────────────────────────────────
+      // ═══════════════════════════════════════════════════════════
+      // CHAT — SEND MESSAGE
+      // ═══════════════════════════════════════════════════════════
       function handleKey(e) {
         if (e.key === "Enter" && !e.shiftKey) {
           e.preventDefault();
@@ -466,29 +811,85 @@
       }
 
       async function sendMessage() {
-        if (isStreaming || !token || !sessionId) return;
+        // Guard checks
+        if (isStreaming) {
+          showToast(
+            "Please wait for the current response to finish",
+            "warning",
+            2000,
+          );
+          return;
+        }
+        if (!token) {
+          showToast("Please login first", "warning");
+          return;
+        }
+        if (!sessionId) {
+          showToast("Please create a new chat first", "warning");
+          await newChat();
+          return;
+        }
+
         const input = document.getElementById("questionInput");
         const q = input.value.trim();
         if (!q) return;
+
+        // Clear empty state if present
+        const emptyState = document.getElementById("emptyState");
+        if (emptyState) emptyState.remove();
+        const anyEmpty = document.querySelector(".empty-state");
+        if (anyEmpty) anyEmpty.remove();
 
         input.value = "";
         isStreaming = true;
         document.getElementById("sendBtn").disabled = true;
 
-        // Show user bubble
+        // Show user message
         addUserBubble(q);
 
-        // Create empty AI bubble with typing indicator
+        // Show typing indicator
         const aiDiv = addTypingBubble();
 
-        // Use SSE streaming
-        const url = `/api/chat/stream?sessionId=${encodeURIComponent(sessionId)}&question=${encodeURIComponent(q)}`;
+        // Build SSE URL — token passed as query param because
+        // EventSource API does NOT support custom headers
+        const url =
+          `/api/chat/stream` +
+          `?sessionId=${encodeURIComponent(sessionId)}` +
+          `&question=${encodeURIComponent(q)}` +
+          `&token=${encodeURIComponent(token)}`;
+
+        debug(`SSE URL built. Session: ${sessionId.substring(0, 8)}...`);
+
         const es = new EventSource(url);
         let fullAnswer = "";
         let sources = [];
+        let hasStarted = false;
+
+        // Timeout — if no data after 30s, show error
+        const timeout = setTimeout(() => {
+          if (isStreaming) {
+            debug("SSE timeout after 30s");
+            aiDiv.textContent =
+              "⚠️ Response timed out. Ollama may be loading the model. Please try again.";
+            aiDiv.classList.remove("typing");
+            es.close();
+            isStreaming = false;
+            document.getElementById("sendBtn").disabled = false;
+            showToast("Response timed out. Try again.", "error");
+          }
+        }, 60000); // 60 second timeout for slow local models
+
+        es.onopen = () => {
+          debug("SSE connection opened");
+        };
 
         es.onmessage = (e) => {
+          hasStarted = true;
+          clearTimeout(timeout);
+
+          // Stream ended
           if (e.data === "[DONE]") {
+            debug("SSE stream complete");
             aiDiv.classList.remove("typing");
             renderSources(aiDiv, sources);
             es.close();
@@ -497,20 +898,36 @@
             loadSessions();
             return;
           }
-          const parsed = JSON.parse(e.data);
+
+          let parsed;
+          try {
+            parsed = JSON.parse(e.data);
+          } catch {
+            debug(`SSE parse error for data: ${e.data}`);
+            return;
+          }
+
+          // Error from server
           if (parsed.error) {
-            aiDiv.textContent = "⚠️ Error: " + parsed.error;
+            debug(`SSE server error: ${parsed.error}`);
+            aiDiv.textContent = `⚠️ ${parsed.error}`;
             aiDiv.classList.remove("typing");
             es.close();
             isStreaming = false;
             document.getElementById("sendBtn").disabled = false;
+            showToast(parsed.error, "error");
+            clearTimeout(timeout);
             return;
           }
+
+          // Sources data
           if (parsed.sources) {
             sources = parsed.sources;
             return;
           }
-          if (parsed.chunk) {
+
+          // Token chunk
+          if (parsed.chunk !== undefined) {
             fullAnswer += parsed.chunk;
             aiDiv.classList.remove("typing");
             aiDiv.textContent = fullAnswer;
@@ -518,26 +935,51 @@
           }
         };
 
-        es.onerror = () => {
-          if (isStreaming) {
+        es.onerror = (e) => {
+          clearTimeout(timeout);
+          debug(
+            `SSE onerror fired. hasStarted: ${hasStarted}, fullAnswer length: ${fullAnswer.length}`,
+          );
+
+          if (!hasStarted) {
+            // Error before any data arrived — likely auth or route issue
             aiDiv.textContent =
-              fullAnswer || "⚠️ Connection error. Please try again.";
-            aiDiv.classList.remove("typing");
-            es.close();
-            isStreaming = false;
-            document.getElementById("sendBtn").disabled = false;
+              "⚠️ Could not connect to AI. Check that Ollama is running.";
+            showToast(
+              "Connection failed. Is Ollama running? Run: ollama serve",
+              "error",
+              5000,
+            );
+          } else if (fullAnswer) {
+            // Got some answer before error — show what we have
+            aiDiv.textContent = fullAnswer;
+            renderSources(aiDiv, sources);
+            showToast(
+              "Stream ended early but answer was received",
+              "warning",
+              3000,
+            );
+          } else {
+            aiDiv.textContent = "⚠️ Connection error. Please try again.";
+            showToast("Stream connection error. Please try again.", "error");
           }
+
+          aiDiv.classList.remove("typing");
+          es.close();
+          isStreaming = false;
+          document.getElementById("sendBtn").disabled = false;
         };
       }
 
-      // ── Render helpers ────────────────────────────────────────────────
+      // ═══════════════════════════════════════════════════════════
+      // RENDER HELPERS
+      // ═══════════════════════════════════════════════════════════
       function addUserBubble(text) {
         const msgs = document.getElementById("messages");
-        msgs.innerHTML += `
-      <div class="msg-wrap user">
-        <div class="avatar user">U</div>
-        <div class="bubble user">${escHtml(text)}</div>
-      </div>`;
+        const div = document.createElement("div");
+        div.className = "msg-wrap user";
+        div.innerHTML = `<div class="avatar user">U</div><div class="bubble user">${escHtml(text)}</div>`;
+        msgs.appendChild(div);
         scrollToBottom();
       }
 
@@ -547,7 +989,8 @@
         div.className = "msg-wrap";
         div.innerHTML = `<div class="avatar ai">AI</div><div class="bubble ai">${escHtml(text)}</div>`;
         msgs.appendChild(div);
-        renderSources(div.querySelector(".bubble"), sources);
+        if (sources && sources.length > 0)
+          renderSources(div.querySelector(".bubble"), sources);
         scrollToBottom();
         return div.querySelector(".bubble");
       }
@@ -592,16 +1035,32 @@
           .replace(/"/g, "&quot;");
       }
 
-      // ── API helper ────────────────────────────────────────────────────
-      function apiFetch(url, opts = {}) {
-        return fetch(url, {
-          ...opts,
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${token}`,
-            ...(opts.headers || {}),
-          },
-        });
+      // ═══════════════════════════════════════════════════════════
+      // API HELPER — always sends token in Authorization header
+      // ═══════════════════════════════════════════════════════════
+      async function apiFetch(url, opts = {}) {
+        if (!token) {
+          debug(`apiFetch called with no token for: ${url}`);
+        }
+        try {
+          const response = await fetch(url, {
+            ...opts,
+            headers: {
+              "Content-Type": "application/json",
+              Authorization: token ? `Bearer ${token}` : "",
+              ...(opts.headers || {}),
+            },
+          });
+
+          // Don't consume response body here - let calling functions handle errors
+          // Just return the response as-is
+          return response;
+        } catch (error) {
+          // Network errors (no internet, server down, etc.)
+          debug(`apiFetch network error: ${error.message}`);
+          showToast(`Network error: ${error.message}`, "error");
+          throw error;
+        }
       }
     </script>
   </body>
