@@ -1,11 +1,8 @@
 /**
- * Route Mappings
- * (sails.config.routes)
+ * config/routes.js
  *
- * Your routes tell Sails what to do each time it receives a request.
- *
- * For more information on configuring custom routes, check out:
- * https://sailsjs.com/anatomy/config/routes-js
+ * Complete routes file — all 4 phases.
+ * This is the FULL file — replace your existing routes.js with this.
  */
 
 module.exports.routes = {
@@ -28,6 +25,10 @@ module.exports.routes = {
   "GET    /api/chat/:sessionId": "ChatController.history",
   "DELETE /api/chat/:sessionId": "ChatController.clearSession",
 
-  "GET    /api/search": "SearchController.search",
-  "POST   /api/feedback": "FeedbackController.create",
+  "GET /api/search": "SearchController.search",
+  "POST /api/feedback": "FeedbackController.create",
+  "GET  /api/feedback/:messageId": "FeedbackController.forMessage",
+  "GET /api/admin/analytics": "AdminController.analytics",
+  "GET /chat.html": { skipAssets: false },
+  "GET /debug.html": { skipAssets: false },
 };

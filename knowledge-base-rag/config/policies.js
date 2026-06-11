@@ -1,11 +1,11 @@
 /**
- * Policy Mappings
- * (sails.config.policies)
+ * config/policies.js
  *
- * Policies are simple functions which run **before** your actions.
+ * Complete policies file — all 4 phases.
+ * This is the FULL file — replace your existing policies.js with this.
  *
- * For more information on configuring policies, check out:
- * https://sailsjs.com/docs/concepts/policies
+ * Policy chain order matters: isAuthenticated runs BEFORE isAdmin.
+ * isAuthenticated sets req.user — isAdmin then checks req.user.role.
  */
 
 module.exports.policies = {
@@ -26,5 +26,9 @@ module.exports.policies = {
   },
   FeedbackController: {
     "*": ["isAuthenticated"],
+  },
+
+  AdminController: {
+    "*": ["isAuthenticated", "isAdmin"],
   },
 };
